@@ -40,7 +40,6 @@ export default function KnowledgeBasePage() {
         const userId = localStorage.getItem("userId") || "guest-user";
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("userId", userId);
 
         try {
             const res = await fetch("/api/ingest", {

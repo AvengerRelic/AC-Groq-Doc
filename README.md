@@ -8,7 +8,10 @@ NexDash is a modern Next.js dashboard featuring a powerful Retrieval-Augmented G
 - **AI-Powered**: Uses Groq for fast inference and Gemini `text-embedding-004` for high-quality search.
 - **Authentication**: Secure login/signup via NextAuth v5.
 - **Role-Based Access**: separate User and Admin dashboards.
-- **Admin Management**: Approve/Reject user registrations.
+- **Admin Dashboard**: 
+  - View total, active, and pending users.
+  - Approve/Reject user registrations.
+  - Search and filter user base.
 - **Modern UI**: Built with Tailwind CSS, Shadcn/UI, and Framer Motion.
 
 ## 🛠️ Tech Stack
