@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String    @default("password123")
+  role      String    @default("USER") // ADMIN/USER
+  status    String    @default("PENDING") // PENDING/APPROVED
+  createdAt DateTime  @default(now())
+  summaries Summary[]
+  files     File[]
+}
+
+model Summary {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String // "video" or "text"
+  title     String
+  content   String   @db.Text
+  original  String   @db.Text // Original URL or Text
+  createdAt DateTime @default(now())
+}
+
+model File {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  name      String
+  url       String
+  createdAt DateTime    @default(now())
+  chunks    FileChunk[]
+}
+
+model FileChunk {
+  id        String                    @id @default(cuid())
+  fileId    String
+  file      File                      @relation(fields: [fileId], references: [id])
+  content   String                    @db.Text
+  embedding Unsupported("vector(768)")?
+}
