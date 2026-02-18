@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { getEmbedding } from "@/lib/ai";
 import { auth } from "@/auth";
+import pdf from "pdf-parse";
 
-// Switched to pdf-parse for better serverless compatibility
+// Allow Vercel functions to run for up to 60 seconds (Hobby plan limit is 10s default)
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
     console.log("Ingest API called");
@@ -27,7 +29,6 @@ export async function POST(req: NextRequest) {
         const buffer = Buffer.from(await file.arrayBuffer());
 
         // Use pdf-parse for reliable serverless execution
-        const pdf = require("pdf-parse");
         const data = await pdf(buffer);
         const text = data.text;
 
