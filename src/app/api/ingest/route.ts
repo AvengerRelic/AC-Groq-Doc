@@ -3,7 +3,7 @@ import prisma from "@/lib/db";
 import { getEmbedding } from "@/lib/ai";
 import { auth } from "@/auth";
 
-// pdf-parse removed in favor of pdfjs-dist
+// Switched to pdf-parse for better serverless compatibility
 
 export async function POST(req: NextRequest) {
     console.log("Ingest API called");
@@ -20,33 +20,16 @@ export async function POST(req: NextRequest) {
 
         console.log("File received:", file?.name, "Size:", file?.size);
         console.log("User ID from session:", userId);
-
         if (!file) {
             return NextResponse.json({ error: "File is required" }, { status: 400 });
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
-        console.log("Buffer created, size:", buffer.length);
 
-        // Load pdfjs-dist (legacy build for Node.js compatibility)
-        console.log("Importing pdfjs-dist...");
-        const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.js");
-        console.log("pdfjs-dist imported");
-
-        const data = new Uint8Array(buffer);
-        console.log("Loading document...");
-        const loadingTask = pdfjsLib.getDocument({ data });
-        const pdfDocument = await loadingTask.promise;
-        console.log("Document loaded, pages:", pdfDocument.numPages);
-
-        let text = "";
-        for (let i = 1; i <= pdfDocument.numPages; i++) {
-            const page = await pdfDocument.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map((item: any) => item.str).join(" ");
-            text += pageText + "\n";
-        }
-        console.log("Text extracted, length:", text.length);
+        // Use pdf-parse for reliable serverless execution
+        const pdf = require("pdf-parse");
+        const data = await pdf(buffer);
+        const text = data.text;
 
         // Create File record
         const fileRecord = await prisma.file.create({
@@ -66,7 +49,6 @@ export async function POST(req: NextRequest) {
         for (let i = 0; i < text.length; i += chunkSize - overlap) {
             chunks.push(text.slice(i, i + chunkSize));
         }
-        console.log("Chunks created:", chunks.length);
 
         // Process chunks: Get embeddings and save
         for (const [index, content] of chunks.entries()) {
