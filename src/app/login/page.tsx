@@ -31,8 +31,19 @@ export default function LoginPage() {
             if (result?.error) {
                 alert("Invalid credentials");
             } else {
-                // Successful login middleware will handle redirects
-                router.push("/dashboard/user");
+                // Fetch session to check role
+                try {
+                    const { getSession } = await import("@/actions/auth-actions");
+                    const session = await getSession();
+                    if (session?.user?.role === "ADMIN") {
+                        router.push("/dashboard/admin");
+                    } else {
+                        router.push("/dashboard/user");
+                    }
+                } catch (error) {
+                    console.error("Failed to get session for redirect", error);
+                    router.push("/dashboard/user"); // Fallback
+                }
             }
         } catch (error) {
             console.error("Login error", error);

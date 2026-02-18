@@ -81,13 +81,11 @@ export async function POST(req: NextRequest) {
                 content,
                 embeddingSql
             );
-            if (index % 5 === 0) console.log(`Processed chunk ${index + 1}/${chunks.length}`);
         }
-        console.log("All chunks processed");
 
         return NextResponse.json({ success: true, fileId: fileRecord.id });
     } catch (error: any) {
-        console.error("Ingestion error full stack:", error);
+        console.error("Ingestion error:", error);
         return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
     }
 }

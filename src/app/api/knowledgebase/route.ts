@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { auth } from "@/auth";
 
 export async function GET(req: NextRequest) {
     try {
-        const { searchParams } = new URL(req.url);
-        const userId = searchParams.get("userId");
-
-        if (!userId) {
-            return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+        const session = await auth();
+        if (!session || !session.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
-
+        const userId = session.user.id;
         const files = await prisma.file.findMany({
             where: { userId },
             orderBy: { createdAt: "desc" },

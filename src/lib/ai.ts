@@ -16,19 +16,19 @@ export async function getEmbedding(text: string) {
     }
 }
 
-export async function getGroqCompletion(prompt: string, context: string) {
+export async function getGroqCompletion(prompt: string, context: string, systemPrompt: string = "You are a helpful assistant. Use the provided context to answer the user's question. If the answer is not in the context, say you don't know.") {
     const completion = await groq.chat.completions.create({
         messages: [
             {
                 role: "system",
-                content: "You are a helpful assistant. Use the provided context to answer the user's question. If the answer is not in the context, say you don't know.",
+                content: systemPrompt,
             },
             {
                 role: "user",
                 content: `Context: ${context}\n\nQuestion: ${prompt}`,
             },
         ],
-        model: "llama3-8b-8192",
+        model: "llama-3.3-70b-versatile",
     });
 
     return completion.choices[0]?.message?.content || "";

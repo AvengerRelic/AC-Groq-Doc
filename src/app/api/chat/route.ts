@@ -4,9 +4,12 @@ import { getEmbedding, getGroqCompletion } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
     try {
-        const { question, fileId } = await req.json();
+        const body = await req.json();
+        console.log("Chat API Request Body:", body);
+        const { question, fileId, deepSearch } = body;
 
         if (!question || !fileId) {
+            console.error("Chat API Error: Missing question or fileId");
             return NextResponse.json({ error: "Question and File ID are required" }, { status: 400 });
         }
 
@@ -15,12 +18,14 @@ export async function POST(req: NextRequest) {
         const embeddingSql = `[${questionEmbedding.join(",")}]`;
 
         // 2. Perform vector similarity search
-        // Using <=> for cosine distance (smaller is better)
+        // Deep Search: Retrieve MORE chunks (e.g., 10 instead of 3) for better context
+        const limit = deepSearch ? 10 : 3;
+
         const chunks: any[] = await prisma.$queryRawUnsafe(
             `SELECT content FROM "FileChunk" 
              WHERE "fileId" = $1 
              ORDER BY embedding <=> $2::vector 
-             LIMIT 3`,
+             LIMIT ${limit}`,
             fileId,
             embeddingSql
         );
@@ -33,7 +38,11 @@ export async function POST(req: NextRequest) {
         const context = chunks.map(c => c.content).join("\n\n---\n\n");
 
         // 4. Get completion from Groq
-        const answer = await getGroqCompletion(question, context);
+        const systemPrompt = deepSearch
+            ? "You are an expert analyst. Provide a detailed, comprehensive answer based STRICTLY on the context. Explain your reasoning and cite specific details."
+            : "You are a helpful assistant. Answer concisely based on the context. If the answer is not in the context, say you don't know.";
+
+        const answer = await getGroqCompletion(question, context, systemPrompt);
 
         return NextResponse.json({ answer });
     } catch (error: any) {
