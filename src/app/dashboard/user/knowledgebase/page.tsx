@@ -15,6 +15,7 @@ export default function KnowledgeBasePage() {
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<any>(null);
+    const [debugInfo, setDebugInfo] = useState<any>(null);
 
     const fetchFiles = async () => {
         setLoading(true);
@@ -24,6 +25,7 @@ export default function KnowledgeBasePage() {
                 const data = await res.json();
                 const fileList = Array.isArray(data) ? data : (data.files || []);
                 setFiles(fileList);
+                setDebugInfo(data.debug || { error: "No debug info" });
 
                 // Auto-select first file if none selected
                 if (!selectedFile && fileList.length > 0) {
@@ -183,6 +185,11 @@ export default function KnowledgeBasePage() {
                         </div>
                     )}
                 </Card>
+            </div>
+
+            <div className="mt-8 p-4 bg-black/50 text-xs font-mono text-slate-500 rounded border border-white/5">
+                <p>Debug Info:</p>
+                <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
             </div>
         </DashboardLayout>
     );

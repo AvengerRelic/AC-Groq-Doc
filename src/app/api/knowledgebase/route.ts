@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
             orderBy: { createdAt: "desc" },
         });
 
-        return NextResponse.json(files);
+        return NextResponse.json({
+            files,
+            debug: { userId, count: files.length }
+        });
     } catch (error: any) {
         console.error("KnowledgeBase fetch error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
