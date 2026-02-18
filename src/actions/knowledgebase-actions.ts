@@ -69,10 +69,11 @@ export async function deleteFile(fileId: string) {
 }
 
 // Import dependencies for Ingest & Chat
-import { getEmbedding, getGroqCompletion } from "@/lib/ai";
+import { getEmbedding, getGroqCompletion, getHuggingFaceCompletion } from "@/lib/ai";
 const pdf = require("pdf-parse");
 
 export async function ingestDocument(formData: FormData) {
+    // ... (unchanged ingest code) ...
     console.log("Server Action: ingestDocument started");
     try {
         const session = await auth();
@@ -172,7 +173,23 @@ export async function getChatResponse(fileId: string, question: string, deepSear
             ? "You are an expert analyst. Provide a detailed, comprehensive answer based STRICTLY on the context. Explain your reasoning and cite specific details."
             : "You are a helpful assistant. Answer concisely based on the context. If the answer is not in the context, say you don't know.";
 
-        const answer = await getGroqCompletion(question, context, systemPrompt);
+        let answer = "";
+        try {
+            // Try Groq first (Primary)
+            console.log("Chat Action: Attempting Groq...");
+            answer = await getGroqCompletion(question, context, systemPrompt);
+        } catch (groqError) {
+            console.warn("Chat Action: Groq failed, failing over to Hugging Face...", groqError);
+            try {
+                // Fallback to Hugging Face (Secondary)
+                answer = await getHuggingFaceCompletion(question, context, systemPrompt);
+                answer += "\n\n(Generated via Fallback AI)";
+            } catch (hfError) {
+                console.error("Chat Action: Both AI providers failed.");
+                return { error: "AI Service Unavailable. Please check API keys." };
+            }
+        }
+
         return { answer };
 
     } catch (error: any) {
