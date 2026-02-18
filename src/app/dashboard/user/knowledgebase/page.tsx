@@ -10,39 +10,32 @@ import Link from "next/link";
 import { ChatInterface } from "@/components/chat-interface";
 import { cn } from "@/lib/utils";
 
+import { getFiles } from "@/actions/knowledgebase-actions";
+
 export default function KnowledgeBasePage() {
     const [files, setFiles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<any>(null);
-    const [debugInfo, setDebugInfo] = useState<any>(null);
 
-    const fetchFiles = async () => {
+    const loadFiles = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/knowledgebase?t=${Date.now()}`);
-            if (res.ok) {
-                const data = await res.json();
-                const fileList = Array.isArray(data) ? data : (data.files || []);
-                setFiles(fileList);
-                setDebugInfo(data.debug || { error: "No debug info" });
+            const data = await getFiles();
+            setFiles(data);
 
-                if (!selectedFile && fileList.length > 0) {
-                    setSelectedFile(fileList[0]);
-                }
-            } else {
-                setDebugInfo({ error: `HTTP ${res.status}`, statusText: res.statusText });
+            if (!selectedFile && data.length > 0) {
+                setSelectedFile(data[0]);
             }
-        } catch (error: any) {
-            console.error("Failed to fetch files", error);
-            setDebugInfo({ error: "Fetch Failed", details: error.message });
+        } catch (error) {
+            console.error("Failed to load files", error);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchFiles();
+        loadFiles();
     }, []);
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,7 +53,7 @@ export default function KnowledgeBasePage() {
             });
             if (res.ok) {
                 alert("File ingested successfully!");
-                fetchFiles();
+                loadFiles();
             } else {
                 const data = await res.json();
                 alert(data.error || "Upload failed");
@@ -84,7 +77,7 @@ export default function KnowledgeBasePage() {
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={fetchFiles}
+                        onClick={loadFiles}
                         className="gap-2 border-white/10 hover:bg-white/5 text-slate-300"
                     >
                         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -188,29 +181,6 @@ export default function KnowledgeBasePage() {
                     )}
                 </Card>
             </div>
-
-            <div className="fixed bottom-4 right-4 p-4 bg-slate-900 text-white text-xs font-mono rounded-lg border border-white/20 shadow-xl z-50 max-w-sm max-h-96 overflow-auto">
-                <p className="font-bold mb-2 text-yellow-400">Debug Console (Vercel Fix)</p>
-                <div className="space-y-1">
-                    <p>Loading: {loading ? "Yes" : "No"}</p>
-                    <p>Files: {files.length}</p>
-                    <p>Selected: {selectedFile?.name || "None"}</p>
-                </div>
-                <div className="mt-2 pt-2 border-t border-white/10">
-                    <p className="mb-1">API Response:</p>
-                    <pre className="bg-black/50 p-2 rounded text-[10px] break-all whitespace-pre-wrap">
-                        {debugInfo ? JSON.stringify(debugInfo, null, 2) : "No data fetched yet..."}
-                    </pre>
-                </div>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    className="mt-2 w-full h-6 text-[10px]"
-                    onClick={fetchFiles}
-                >
-                    Force Refresh
-                </Button>
-            </div>
-        </DashboardLayout >
+        </DashboardLayout>
     );
 }
