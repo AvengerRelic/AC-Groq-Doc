@@ -20,6 +20,8 @@ interface ChatInterfaceProps {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
+import { getChatResponse } from "@/actions/knowledgebase-actions";
+
 export function ChatInterface({ fileId, fileName }: ChatInterfaceProps) {
     const [messages, setMessages] = useState<Message[]>([
         { role: "bot", content: `Hello! I'm ready to answer questions about "${fileName}".` }
@@ -52,20 +54,14 @@ export function ChatInterface({ fileId, fileName }: ChatInterfaceProps) {
         setLoading(true);
 
         try {
-            const res = await fetch("/api/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ fileId, question: userMessage, deepSearch }),
-            });
+            // Use Server Action directly
+            const result = await getChatResponse(fileId, userMessage, deepSearch);
 
-            if (!res.ok) {
-                const errorText = await res.text();
-                // console.error(`Chat API Error: ${res.status} - ${errorText}`);
-                throw new Error(`Server Error: ${res.status} - ${errorText}`);
+            if (result.error) {
+                throw new Error(result.error);
             }
 
-            const data = await res.json();
-            setMessages(prev => [...prev, { role: "bot", content: data.answer }]);
+            setMessages(prev => [...prev, { role: "bot", content: result.answer || "No response." }]);
         } catch (error: any) {
             console.error("Chat error details:", error);
             setMessages(prev => [...prev, { role: "bot", content: `Error: ${error.message || "Failed to connect"}` }]);

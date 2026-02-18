@@ -10,7 +10,7 @@ import Link from "next/link";
 import { ChatInterface } from "@/components/chat-interface";
 import { cn } from "@/lib/utils";
 
-import { getFiles } from "@/actions/knowledgebase-actions";
+import { getFiles, ingestDocument } from "@/actions/knowledgebase-actions";
 
 export default function KnowledgeBasePage() {
     const [files, setFiles] = useState<any[]>([]);
@@ -47,16 +47,14 @@ export default function KnowledgeBasePage() {
         formData.append("file", file);
 
         try {
-            const res = await fetch("/api/ingest", {
-                method: "POST",
-                body: formData,
-            });
-            if (res.ok) {
+            // Use Server Action directly
+            const result = await ingestDocument(formData);
+
+            if (result.success) {
                 alert("File ingested successfully!");
                 loadFiles();
             } else {
-                const data = await res.json();
-                alert(data.error || "Upload failed");
+                alert(result.error || "Upload failed");
             }
         } catch (error) {
             console.error("Upload error", error);
