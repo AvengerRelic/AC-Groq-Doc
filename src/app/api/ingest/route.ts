@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db";
 import { getEmbedding } from "@/lib/ai";
 import { auth } from "@/auth";
-import pdf from "pdf-parse";
+
+// Use require for pdf-parse to avoid "no default export" TS error
+const pdf = require("pdf-parse");
 
 // Allow Vercel functions to run for up to 60 seconds (Hobby plan limit is 10s default)
 export const maxDuration = 60;
@@ -66,6 +69,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        revalidatePath("/dashboard/user/knowledgebase");
         return NextResponse.json({ success: true, fileId: fileRecord.id });
     } catch (error: any) {
         console.error("Ingestion error:", error);

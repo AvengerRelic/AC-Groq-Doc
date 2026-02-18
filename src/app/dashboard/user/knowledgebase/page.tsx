@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FileText, Upload, MessageSquare, Trash2, Loader2 } from "lucide-react";
+import { FileText, Upload, MessageSquare, Trash2, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { ChatInterface } from "@/components/chat-interface";
 import { cn } from "@/lib/utils";
@@ -76,27 +76,39 @@ export default function KnowledgeBasePage() {
                     <h1 className="text-3xl font-bold text-white mb-2">KnowledgeBase</h1>
                     <p className="text-slate-400">Select a document to start chatting.</p>
                 </div>
-                <div className="relative">
-                    <input
-                        type="file"
-                        accept=".pdf"
-                        className="hidden"
-                        id="pdf-upload"
-                        onChange={handleUpload}
-                        disabled={uploading}
-                    />
-                    <label htmlFor="pdf-upload">
-                        <Button asChild className="cursor-pointer gap-2">
-                            <span>
-                                {uploading ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Upload className="h-4 w-4" />
-                                )}
-                                {uploading ? "Ingesting..." : "Upload New PDF"}
-                            </span>
-                        </Button>
-                    </label>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchFiles}
+                        className="gap-2 border-white/10 hover:bg-white/5 text-slate-300"
+                    >
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                        Refresh
+                    </Button>
+
+                    <div className="relative">
+                        <input
+                            type="file"
+                            accept=".pdf"
+                            className="hidden"
+                            id="pdf-upload"
+                            onChange={handleUpload}
+                            disabled={uploading}
+                        />
+                        <label htmlFor="pdf-upload">
+                            <Button asChild className="cursor-pointer gap-2">
+                                <span>
+                                    {uploading ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Upload className="h-4 w-4" />
+                                    )}
+                                    {uploading ? "Ingesting..." : "Upload New PDF"}
+                                </span>
+                            </Button>
+                        </label>
+                    </div>
                 </div>
             </div>
 
