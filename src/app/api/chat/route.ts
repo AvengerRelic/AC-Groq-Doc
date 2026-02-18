@@ -4,6 +4,7 @@ import { getEmbedding, getGroqCompletion } from "@/lib/ai";
 
 // Allow longer timeout for Deep Search thinking time
 export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
     try {

@@ -9,6 +9,7 @@ const pdf = require("pdf-parse");
 
 // Allow Vercel functions to run for up to 60 seconds (Hobby plan limit is 10s default)
 export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
     console.log("Ingest API called");
