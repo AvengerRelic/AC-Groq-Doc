@@ -68,12 +68,47 @@ export async function deleteFile(fileId: string) {
     }
 }
 
+// --------------------------------------------------------------------------------------------------
+// POLYFILL: pdf-parse requires DOMMatrix in Node.js environment
+// --------------------------------------------------------------------------------------------------
+if (typeof Promise.withResolvers === "undefined") {
+    if (typeof window !== "undefined") {
+        // @ts-expect-error
+        window.Promise.withResolvers = function () {
+            let resolve, reject;
+            const promise = new Promise((res, rej) => {
+                resolve = res;
+                reject = rej;
+            });
+            return { promise, resolve, reject };
+        };
+    } else {
+        // @ts-expect-error
+        global.Promise.withResolvers = function () {
+            let resolve, reject;
+            const promise = new Promise((res, rej) => {
+                resolve = res;
+                reject = rej;
+            });
+            return { promise, resolve, reject };
+        };
+    }
+}
+
+// Polyfill DOMMatrix for pdf-parse
+if (typeof DOMMatrix === "undefined") {
+    // @ts-expect-error
+    global.DOMMatrix = class DOMMatrix {
+        constructor() { }
+    };
+}
+
+// Import dependencies for Ingest & Chat
 // Import dependencies for Ingest & Chat
 import { getEmbedding, getGroqCompletion, getHuggingFaceCompletion } from "@/lib/ai";
-const pdf = require("pdf-parse");
+const pdfParse = require("pdf-parse");
 
 export async function ingestDocument(formData: FormData) {
-    // ... (unchanged ingest code) ...
     console.log("Server Action: ingestDocument started");
     try {
         const session = await auth();
@@ -90,8 +125,19 @@ export async function ingestDocument(formData: FormData) {
         console.log(`Server Action: Processing file ${file.name} (${file.size} bytes)`);
         const buffer = Buffer.from(await file.arrayBuffer());
 
-        // Parse PDF
-        const data = await pdf(buffer);
+        // Parse PDF - Handle both direct export and .default
+        let pdfFunction = pdfParse;
+        // Check if it's an ESM module with a default export
+        if (typeof pdfFunction !== 'function' && pdfFunction && typeof pdfFunction.default === 'function') {
+            pdfFunction = pdfFunction.default;
+        }
+
+        if (typeof pdfFunction !== 'function') {
+            console.error("PDF-Parse Import Error: typeof pdf is", typeof pdfParse, pdfParse);
+            throw new Error(`Internal Error: PDF Parser failed to initialize. Got ${typeof pdfParse}`);
+        }
+
+        const data = await pdfFunction(buffer);
         const text = data.text;
 
         if (!text || text.length < 10) {
@@ -190,10 +236,40 @@ export async function getChatResponse(fileId: string, question: string, deepSear
             }
         }
 
+        // 4. Save Chat History
+        await prisma.message.createMany({
+            data: [
+                { fileId, userId: session.user.id, role: "user", content: question },
+                { fileId, userId: session.user.id, role: "bot", content: answer }
+            ]
+        });
+
         return { answer };
 
     } catch (error: any) {
         console.error("Chat Action Error:", error);
         return { error: error.message || "Chat failed" };
+    }
+}
+
+export async function getMessages(fileId: string) {
+    try {
+        const session = await auth();
+        if (!session || !session.user?.id) return [];
+
+        const messages = await prisma.message.findMany({
+            where: {
+                fileId,
+                userId: session.user.id
+            },
+            orderBy: {
+                createdAt: 'asc'
+            }
+        });
+
+        return messages;
+    } catch (error) {
+        console.error("Get Messages Error:", error);
+        return [];
     }
 }

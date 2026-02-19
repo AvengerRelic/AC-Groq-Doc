@@ -21,6 +21,7 @@ model User {
   createdAt DateTime  @default(now())
   summaries Summary[]
   files     File[]
+  messages  Message[]
 }
 
 model Summary {
@@ -42,6 +43,7 @@ model File {
   url       String
   createdAt DateTime    @default(now())
   chunks    FileChunk[]
+  messages  Message[]
 }
 
 model FileChunk {
@@ -50,4 +52,15 @@ model FileChunk {
   file      File                      @relation(fields: [fileId], references: [id])
   content   String                    @db.Text
   embedding Unsupported("vector(768)")?
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  fileId    String
+  file      File     @relation(fields: [fileId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  role      String   // "user" or "bot"
+  content   String   @db.Text
+  createdAt DateTime @default(now())
 }

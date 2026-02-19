@@ -20,20 +20,31 @@ interface ChatInterfaceProps {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-import { getChatResponse } from "@/actions/knowledgebase-actions";
+import { getChatResponse, getMessages } from "@/actions/knowledgebase-actions";
 
 export function ChatInterface({ fileId, fileName }: ChatInterfaceProps) {
-    const [messages, setMessages] = useState<Message[]>([
-        { role: "bot", content: `Hello! I'm ready to answer questions about "${fileName}".` }
-    ]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [deepSearch, setDeepSearch] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Reset chat when file changes
+    // Load initial messages
     useEffect(() => {
-        setMessages([{ role: "bot", content: `Hello! I'm ready to answer questions about "${fileName}".` }]);
+        const loadHistory = async () => {
+            const history = await getMessages(fileId);
+            if (history && history.length > 0) {
+                // Convert DB messages to UI format
+                setMessages(history.map((m: any) => ({
+                    role: m.role as "user" | "bot",
+                    content: m.content
+                })));
+            } else {
+                // Default welcome message if no history
+                setMessages([{ role: "bot", content: `Hello! I'm ready to answer questions about "${fileName}".` }]);
+            }
+        };
+        loadHistory();
         setInput("");
         setDeepSearch(false);
     }, [fileId, fileName]);
